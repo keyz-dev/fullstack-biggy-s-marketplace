@@ -22,7 +22,7 @@ const newOrder = wrapAsync(async (req, res, next) => {
   
   let total = 0;
   for (let i = 0; i < orderItems.length; i++) {
-    const product = await Product.findById(orderItems[i].product);
+    const product = await Product.findById(orderItems[i].product).populate('vendor');
     if (!product) {
       return next(new BadRequestError('Product Not Found', 404));
     }
@@ -34,8 +34,13 @@ const newOrder = wrapAsync(async (req, res, next) => {
         )
       );
     }
-    orderItems[i].price = product.price;
+
+    console.log("\n\nfoutnd the product: ", product)
+
+    // Set the required fields according to the schema
+    orderItems[i].unitPrice = product.price;
     orderItems[i].farmerId = product.vendor._id;
+    orderItems[i].vendor = product.vendor._id;
     total += product.price * orderItems[i].quantity;
   }
 

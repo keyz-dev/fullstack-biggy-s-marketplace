@@ -35,7 +35,7 @@ const orderSchema = new mongoose.Schema({
   shippingAddress: addressSchema,
   paymentMethod: {
     type: String,
-    enum: ['cash_on_delivery', 'credit_card', 'momo', 'om'],
+    enum: ['cash_on_delivery', 'credit_card', 'momo', 'om', 'MTN MoMo', 'Orange Money'],
     default: 'cash_on_delivery',
     required: true,
   },

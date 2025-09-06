@@ -46,6 +46,7 @@ const SIZES = {
   width,
   
   // Additional sizes for consistent styling
+  base: 16, // This was missing!
   padding: 16,
   radius: 8,
   h3: 18,

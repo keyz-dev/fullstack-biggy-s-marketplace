@@ -99,12 +99,15 @@ const NotificationProvider = ({ children }) => {
       // setUnreadCount(response.unreadCount);
       
       // For now, calculate from local notifications
-      const unread = notifications.filter(n => !n.isRead).length;
-      setUnreadCount(unread);
+      setNotifications(currentNotifications => {
+        const unread = currentNotifications.filter(n => !n.isRead).length;
+        setUnreadCount(unread);
+        return currentNotifications;
+      });
     } catch (error) {
       console.error("Failed to get unread count:", error);
     }
-  }, [getToken, user, notifications]);
+  }, [getToken, user]);
 
   // Mark notification as read
   const markAsRead = useCallback(
@@ -116,9 +119,9 @@ const NotificationProvider = ({ children }) => {
         // TODO: Implement API call to mark as read
         // await notificationsAPI.markAsRead(notificationId);
 
-        // Update local state
-        setNotifications((prev) =>
-          prev.map((notification) =>
+        // Update local state and unread count
+        setNotifications((prev) => {
+          const updated = prev.map((notification) =>
             notification.id === notificationId
               ? {
                   ...notification,
@@ -126,11 +129,14 @@ const NotificationProvider = ({ children }) => {
                   readAt: new Date().toISOString(),
                 }
               : notification
-          )
-        );
-
-        // Update unread count
-        await getUnreadCount();
+          );
+          
+          // Update unread count
+          const unread = updated.filter(n => !n.isRead).length;
+          setUnreadCount(unread);
+          
+          return updated;
+        });
 
         // Emit socket event to mark as read
         SocketService.markNotificationAsRead(notificationId);
@@ -147,7 +153,7 @@ const NotificationProvider = ({ children }) => {
         });
       }
     },
-    [getToken, getUnreadCount]
+    [getToken]
   );
 
   // Mark all notifications as read
@@ -190,18 +196,20 @@ const NotificationProvider = ({ children }) => {
         // TODO: Implement API call to delete notification
         // await notificationsAPI.deleteNotification(notificationId);
 
-        // Update local state
-        setNotifications((prev) =>
-          prev.filter((notification) => notification.id !== notificationId)
-        );
-
-        // Update unread count if notification was unread
-        const deletedNotification = notifications.find(
-          (n) => n.id === notificationId
-        );
-        if (deletedNotification && !deletedNotification.isRead) {
-          setUnreadCount((prev) => Math.max(0, prev - 1));
-        }
+        // Update local state and unread count
+        setNotifications((prev) => {
+          const deletedNotification = prev.find(
+            (n) => n.id === notificationId
+          );
+          const updated = prev.filter((notification) => notification.id !== notificationId);
+          
+          // Update unread count if notification was unread
+          if (deletedNotification && !deletedNotification.isRead) {
+            setUnreadCount((current) => Math.max(0, current - 1));
+          }
+          
+          return updated;
+        });
 
         Toast.show({
           type: "success",
@@ -215,7 +223,7 @@ const NotificationProvider = ({ children }) => {
         });
       }
     },
-    [getToken, notifications]
+    [getToken]
   );
 
   // Refresh notifications from API
@@ -260,23 +268,26 @@ const NotificationProvider = ({ children }) => {
         updatedAt: new Date().toISOString(),
       };
 
-      setNotifications((prev) => [newNotification, ...prev]);
+      setNotifications((prev) => {
+        const updatedNotifications = [newNotification, ...prev];
+        
+        // Update unread count if notification is unread
+        if (!newNotification.isRead) {
+          setUnreadCount((current) => current + 1);
+        }
 
-      // Update unread count if notification is unread
-      if (!newNotification.isRead) {
-        setUnreadCount((prev) => prev + 1);
-      }
+        // Store in AsyncStorage
+        if (user?.id) {
+          AsyncStorage.setItem(
+            `notifications_${user.id}`,
+            JSON.stringify(updatedNotifications)
+          ).catch(error => {
+            console.error("Failed to store notification:", error);
+          });
+        }
 
-      // Store in AsyncStorage
-      try {
-        const updatedNotifications = [newNotification, ...notifications];
-        await AsyncStorage.setItem(
-          `notifications_${user.id}`,
-          JSON.stringify(updatedNotifications)
-        );
-      } catch (error) {
-        console.error("Failed to store notification:", error);
-      }
+        return updatedNotifications;
+      });
 
       // Show toast for new notifications
       Toast.show({
@@ -289,7 +300,7 @@ const NotificationProvider = ({ children }) => {
         visibilityTime: 5000,
       });
     },
-    [user, notifications]
+    [user]
   );
 
   // Handle new notification from socket
@@ -395,12 +406,11 @@ const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       refreshNotifications();
-      getUnreadCount();
     } else {
       setNotifications([]);
       setUnreadCount(0);
     }
-  }, [user, refreshNotifications, getUnreadCount]);
+  }, [user, refreshNotifications]);
 
   // Update socket connection status
   useEffect(() => {

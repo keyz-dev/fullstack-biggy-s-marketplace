@@ -32,7 +32,7 @@ import {
 } from "../../stateManagement/contexts/AuthContext";
 
 const FarmerRegistrationContent = ({ navigation }) => {
-  const { register } = useAuth();
+  const { registerFarmer } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
@@ -111,7 +111,7 @@ const FarmerRegistrationContent = ({ navigation }) => {
       delete finalData.accountNumber;
       delete finalData.accountName;
 
-      await handleFarmerSignUp(finalData, register, navigation);
+      await handleFarmerSignUp(finalData, registerFarmer, navigation);
     } catch (error) {
       Alert.alert("Error", "Registration failed. Please try again.");
     }

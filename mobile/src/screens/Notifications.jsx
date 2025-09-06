@@ -168,7 +168,7 @@ const Notifications = ({ navigation }) => {
             <View
               style={[
                 styles.connectionDot,
-                { backgroundColor: socketConnected ? COLORS.green : COLORS.red },
+                { backgroundColor: socketConnected ? COLORS.success : COLORS.error },
               ]}
             />
             <Text style={styles.connectionText}>
@@ -222,6 +222,16 @@ const Notifications = ({ navigation }) => {
         }
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={false}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        initialNumToRender={10}
+        getItemLayout={(data, index) => ({
+          length: 80, // Approximate height of each notification item
+          offset: 80 * index,
+          index,
+        })}
       />
     </SafeAreaView>
   );

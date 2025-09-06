@@ -89,4 +89,12 @@ router.put(
   applicationController.reviewApplication
 );
 
+// Activate account after approval - user only
+router.post(
+  "/activate",
+  authenticateUser,
+  authorizeRoles(["pending_farmer", "pending_delivery_agent"]),
+  applicationController.activateAccount
+);
+
 module.exports = router;

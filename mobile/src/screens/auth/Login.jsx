@@ -86,7 +86,6 @@ const LoginScreen = ({}) => {
     try {
       await googleSignIn();
       // User is now logged in - navigation will be handled by AuthContext
->>>>>>> 40d4901 (getting things ready for deployment)
     } catch (err) {
       console.log(err);
       submissionError(err);
@@ -201,7 +200,6 @@ const LoginScreen = ({}) => {
                   </Text>
                 </TouchableOpacity>
 
->>>>>>> 40d4901 (getting things ready for deployment)
                 {/* Link to role selection page */}
                 <TouchableOpacity
                   onPress={() => navigation.navigate("RoleSelection")}

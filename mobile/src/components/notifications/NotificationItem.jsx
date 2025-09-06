@@ -102,6 +102,7 @@ const NotificationItem = ({ notification, onPress }) => {
       ]}
       onPress={handlePress}
       activeOpacity={0.7}
+      delayPressIn={0}
     >
       <View style={styles.content}>
         {/* Icon */}

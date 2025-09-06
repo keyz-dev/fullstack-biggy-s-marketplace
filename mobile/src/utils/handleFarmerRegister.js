@@ -32,12 +32,6 @@ const validateFarmerFields = (values) => {
         errors.push('Passwords do not match');
     }
 
-    // Phone number validation (basic)
-    const phoneRegex = /^\d{9,15}$/;
-    if (values.phone && !phoneRegex.test(values.phone.replace(/\s+/g, ''))) {
-        errors.push('Please enter a valid phone number');
-    }
-
     // Delivery radius validation
     if (values.deliveryRadiusKm && (isNaN(values.deliveryRadiusKm) || values.deliveryRadiusKm <= 0)) {
         errors.push('Delivery radius must be a positive number');
@@ -164,16 +158,16 @@ const formatDateForAPI = (date) => {
  */
 export const handleFarmerSignUp = async (values, register, navigation) => {
     try {
-        // Validate all farmer fields
-        const validation = validateFarmerFields(values);
-        if (!validation.isValid) {
-            Alert.alert(
-                "Validation Error",
-                validation.errors.join('\n'),
-                [{ text: "OK" }]
-            );
-            return;
-        }
+        // // Validate all farmer fields
+        // const validation = validateFarmerFields(values);
+        // if (!validation.isValid) {
+        //     Alert.alert(
+        //         "Validation Error",
+        //         validation.errors.join('\n'),
+        //         [{ text: "OK" }]
+        //     );
+        //     return;
+        // }
 
         // Create FormData instance
         const formData = new FormData();

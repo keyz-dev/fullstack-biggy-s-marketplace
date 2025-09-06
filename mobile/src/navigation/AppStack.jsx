@@ -18,16 +18,23 @@ import { NotificationBadge } from "../components/notifications";
 import BottomTabNavigation from "./BottomTabNavigation";
 import FarmerStack from "./FarmerStack";
 import ApplicationTracking from "../screens/deliveryAgent/ApplicationTracking";
+import AccountActivation from "../screens/AccountActivation";
+import DeliveryAgentDashboard from "../screens/deliveryAgent/DeliveryAgentDashboard";
 
 const Drawer = createDrawerNavigator();
 
 const AppStack = () => {
   const { user } = useAuth();
 
+  console.log("\n\nuser: ", user);
+
   // Determine initial route based on user role
   const getInitialRouteName = () => {
     if (user?.role === "pending_delivery_agent" || user?.role === "pending_farmer") {
       return "ApplicationTracking";
+    }
+    if (user?.role === "approved_delivery_agent" || user?.role === "approved_farmer") {
+      return "AccountActivation";
     }
     return "Home";
   };
@@ -146,6 +153,23 @@ const AppStack = () => {
           />
         )}
 
+        {/* Account Activation for Approved Users */}
+        {(user?.role === "approved_delivery_agent" || user?.role === "approved_farmer") && (
+          <Drawer.Screen
+            name="AccountActivation"
+            component={AccountActivation}
+            options={{
+              drawerIcon: ({ color, focused }) => (
+                <Ionicons
+                  name={focused ? "checkmark-circle" : "checkmark-circle-outline"}
+                  size={22}
+                  color={color}
+                />
+              ),
+            }}
+          />
+        )}
+
       {/* Farmer */}
       {user?.role === "farmer" && (
         <Drawer.Screen
@@ -155,6 +179,23 @@ const AppStack = () => {
             drawerIcon: ({ color, focused }) => (
               <Ionicons
                 name={focused ? "leaf" : "leaf-outline"}
+                size={22}
+                color={color}
+              />
+            ),
+          }}
+        />
+      )}
+
+      {/* Delivery Agent */}
+      {user?.role === "delivery_agent" && (
+        <Drawer.Screen
+          name="Delivery Dashboard"
+          component={DeliveryAgentDashboard}
+          options={{
+            drawerIcon: ({ color, focused }) => (
+              <Ionicons
+                name={focused ? "bicycle" : "bicycle-outline"}
                 size={22}
                 color={color}
               />

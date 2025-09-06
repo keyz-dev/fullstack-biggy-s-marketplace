@@ -76,7 +76,7 @@ export const applicationAPI = {
       const application = response.data.data;
       
       // Create timeline from application data
-      const timeline = createApplicationTimeline(application);
+      const timeline = applicationAPI.createApplicationTimeline(application);
       
       return {
         success: true,
@@ -84,7 +84,7 @@ export const applicationAPI = {
           application,
           timeline,
           status: application.status,
-          estimatedCompletion: getEstimatedCompletion(application)
+          estimatedCompletion: applicationAPI.getEstimatedCompletion(application)
         }
       };
     } catch (error) {
@@ -101,7 +101,7 @@ export const applicationAPI = {
     try {
       const response = await api.get(`${URL_PREFIX}/${applicationId}`);
       const application = response.data.data;
-      const timeline = createApplicationTimeline(application);
+      const timeline = applicationAPI.createApplicationTimeline(application);
       
       return {
         success: true,
@@ -177,7 +177,7 @@ export const applicationAPI = {
         status: 'decision',
         title: 'Decision Made',
         description: 'You will receive notification of the final decision.',
-        date: getEstimatedCompletion(application),
+        date: applicationAPI.getEstimatedCompletion(application),
         completed: false
       });
     }
@@ -196,6 +196,21 @@ export const applicationAPI = {
     const estimatedCompletion = new Date(submittedDate);
     estimatedCompletion.setDate(estimatedCompletion.getDate() + estimatedDays);
     return estimatedCompletion;
+  },
+
+  // ==================== ACCOUNT ACTIVATION ====================
+
+  /**
+   * Activate user account after application approval
+   * @returns {Promise} API response
+   */
+  activateAccount: async () => {
+    try {
+      const response = await api.post(`${URL_PREFIX}/activate`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
 

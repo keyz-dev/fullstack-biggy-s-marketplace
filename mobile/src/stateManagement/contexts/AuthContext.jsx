@@ -42,12 +42,11 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.login(email, password);
       
-      // Check if user is verified and has token
-      if (response.data && response.data.user && response.data.user.emailVerified && response.data.token) {
-        // User is verified - set user and token
+      // Check if user has token (email verification is not required for login)
+      if (response.data && response.data.user && response.data.token) {
+        // User is logged in - set user and token
         setUserAndToken(response.data.user, response.data.token);
       }
-      // If user is not verified, don't set user/token - let login screen handle redirect
       
       return response; // Return response for handling email verification
     } catch (error) {
@@ -189,6 +188,63 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const registerFarmer   = async (formData) => {
+    setLoading(true);
+
+    try {
+      const res = await api.post("/auth/register/farmer", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 30000, // 30 second timeout
+      });
+
+      if (res.data.success) {
+        setUserAndToken(res.data.user, res.data.token);
+      } else {
+        throw new Error(res.data.message || "Registration failed");
+      }
+    } catch (error) {
+      let errorMessage = "Something went wrong. Please try again.";
+
+      if (error.response) {
+        if (error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.status === 413) {
+          errorMessage = "File too large. Please select a smaller image.";
+        } else if (error.response.status === 400) {
+          errorMessage = "Invalid data. Please check all fields.";
+        } else if (error.response.status >= 500) {
+          errorMessage = "Server error. Please try again later.";
+        }
+      } else if (error.request) {
+        errorMessage = "Network error. Please check your connection.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      throw errorMessage;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Refresh user data (without loading state)
+  const refreshUser = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return;
+
+      const response = await authAPI.verifyToken(token);
+      if (response.success && response.user) {
+        setUser(response.user);
+        await AsyncStorage.setItem("user", JSON.stringify(response.user));
+      }
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+    }
+  };
+
   const value = {
     // state
     user,
@@ -199,12 +255,14 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     registerClient,
+    registerFarmer,
     initiateRegistration,
     verifyEmail,
     resendVerificationEmail,
     googleSignIn,
     googleSignUp,
     verifyToken,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

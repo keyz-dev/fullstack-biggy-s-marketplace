@@ -225,3 +225,24 @@ exports.getApplicationStats = wrapAsync(async (req, res, next) => {
     next(error);
   }
 });
+
+/**
+ * Activate user account after application approval
+ */
+exports.activateAccount = wrapAsync(async (req, res, next) => {
+  try {
+    const userId = req.authUser.userId;
+    
+    const result = await ApplicationService.activateAccount(userId);
+    
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: {
+        newRole: result.newRole
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});

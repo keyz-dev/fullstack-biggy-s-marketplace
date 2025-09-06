@@ -8,6 +8,7 @@ const {
 const registrationController = require("../controller/registration");
 const authController = require("../controller/auth");
 const { authenticateUser } = require("../middleware/auth");
+const { createUser } = require("../controller/auth");
 
 const router = express.Router();
 
@@ -19,6 +20,8 @@ router.post(
   handleUploadError,
   registrationController.registerClient
 );
+
+router.post("/register/farmer", upload.single("avatar"), handleCloudinaryUpload, formatFilePaths, handleUploadError, createUser);
 
 // // Admin registration (simple, no documents)
 // router.post(

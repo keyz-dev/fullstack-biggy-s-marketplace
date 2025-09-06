@@ -370,22 +370,52 @@ class ApplicationService {
         { new: true, runValidators: true }
       ).populate("userId", "name email phone avatar");
 
-      // Update user role based on application status
-      if (status === "approved") {
-        const newRole =
-          application.applicationType === "farmer"
-            ? "farmer"
-            : "delivery_agent";
-        await User.findByIdAndUpdate(application.userId, { role: newRole });
-      } else if (status === "rejected") {
-        const newRole =
-          application.applicationType === "farmer"
-            ? "incomplete_farmer"
-            : "incomplete_delivery_agent";
-        await User.findByIdAndUpdate(application.userId, { role: newRole });
+      return updatedApplication;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Activate user account after application approval
+   */
+  static async activateAccount(userId) {
+    try {
+      // Get user and their approved application
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new NotFoundError("User not found");
       }
 
-      return updatedApplication;
+      // Check if user has approved application
+      const approvedApplication = await Application.findOne({
+        userId,
+        status: "approved",
+        applicationType: { $in: ["farmer", "delivery_agent"] }
+      });
+
+      if (!approvedApplication) {
+        throw new BadRequestError("No approved application found for activation");
+      }
+
+      // Check if user is in approved state
+      if (!["approved_farmer", "approved_delivery_agent"].includes(user.role)) {
+        throw new BadRequestError("Account is not in approved state for activation");
+      }
+
+      // Activate the account by updating role
+      const newRole = approvedApplication.applicationType;
+      await User.findByIdAndUpdate(userId, { 
+        role: newRole,
+        isVerified: true,
+        isActive: true
+      });
+
+      return {
+        success: true,
+        message: `Account activated successfully as ${newRole}`,
+        newRole
+      };
     } catch (error) {
       throw error;
     }

@@ -27,6 +27,61 @@ const {
 const { formatUserData } = require("../utils/returnFormats/userData");
 const axios = require("axios");
 
+const {
+  validateClient,
+  validateFarmer,
+} = require("../validation/userValidator.js");
+
+
+exports.createUser = async (req, res, next) => {
+
+  if (!req.body.role) {
+    return next(new BadRequestError("Please enter role", 400));
+  }
+
+  if (req.body.addressCoordinates) {
+    req.body.addressCoordinates = JSON.parse(req.body.addressCoordinates);
+  }
+
+  if (req.body.role === "farmer") {
+    req.body.produceTypes = JSON.parse(req.body.produceTypes);
+    req.body.shopCoordinates = JSON.parse(req.body.shopCoordinates);
+    req.body.deliveryRadiusKm = Number(req.body.deliveryRadiusKm);
+    req.body.payment = JSON.parse(req.body.payment);
+    const { value, error } = validateFarmer(req.body);
+    if (error) {
+      return next(new BadRequestError(error.details[0].message, 400));
+    }
+  } else {
+    req.body.role = "client";
+    const { value, error } = validateClient(req.body);
+    if (error) {
+      return next(new BadRequestError(error.details[0].message, 400));
+    }
+  }
+
+  // check if user already exist
+  const { email } = req.body;
+  let user = await User.findOne({ email });
+
+  if (user) {
+    return next(
+      new BadRequestError(`user already exist with this email id ${email}`, 400)
+    );
+  }
+
+  let avatar = undefined;
+  if (req.file) {
+    avatar = req.file.path;
+  }
+  req.body.avatar = avatar;
+  user = new User(req.body);
+  user = await user.save();
+
+  sendToken(user, res, `Registered Successfully`, 201);
+};
+
+
 // ==================== UNIFIED LOGIN ====================
 exports.login = async (req, res, next) => {
   try {
@@ -48,40 +103,58 @@ exports.login = async (req, res, next) => {
     if (!user.isActive)
       return next(new ForbiddenError("Your account is not active"));
 
-    // Check if user needs email verification
-    if (!user.emailVerified) {
-      // Send verification email for unverified users
-      await sendVerificationEmail(user, email, user.name);
-      
-      return res.status(200).json({
-        status: "success",
-        message: "Login successful. Please verify your email.",
-        data: {
-          user: {
-            id: user._id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            emailVerified: false,
-          },
-        },
-      });
-    }
+    
+     // User is verified - generate token and return full user data
+     const token = await user.generateAuthToken();
+    
+     // Format response with user data and token
+     const formattedResponse = {
+       status: "success",
+       message: "Login successful",
+       data: {
+         user: formatUserData(user),
+         token: token,
+       },
+     };
 
-    // User is verified - generate token and return full user data
-    const token = await user.generateAuthToken();
+     console.log("formattedResponse: ", formattedResponse);
+     
+     res.json(formattedResponse);
+
+    // Check if user needs email verification
+    // if (!user.emailVerified) {
+    //   // Send verification email for unverified users
+    //   await sendVerificationEmail(user, email, user.name);
+      
+    //   return res.status(200).json({
+    //     status: "success",
+    //     message: "Login successful. Please verify your email.",
+    //     data: {
+    //       user: {
+    //         id: user._id,
+    //         email: user.email,
+    //         name: user.name,
+    //         role: user.role,
+    //         emailVerified: false,
+    //       },
+    //     },
+    //   });
+    // }
+
+    // // User is verified - generate token and return full user data
+    // const token = await user.generateAuthToken();
     
-    // Format response with user data and token
-    const formattedResponse = {
-      status: "success",
-      message: "Login successful",
-      data: {
-        user: formatUserData(user),
-        token: token,
-      },
-    };
+    // // Format response with user data and token
+    // const formattedResponse = {
+    //   status: "success",
+    //   message: "Login successful",
+    //   data: {
+    //     user: formatUserData(user),
+    //     token: token,
+    //   },
+    // };
     
-    res.json(formattedResponse);
+    // res.json(formattedResponse);
   } catch (err) {
     return next(err);
   }
